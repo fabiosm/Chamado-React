@@ -5,6 +5,7 @@ import Alert from '@mui/material/Alert';
 import { SignInPage } from '@toolpad/core/SignInPage';
 import { providerMap } from '../../../auth';
 import signIn from './actions';
+import { Button } from '@mui/material';
 
 function ForgotPasswordLink() {
   return (
@@ -33,6 +34,13 @@ function DemoInfo() {
   );
 }
 
+function Title()
+{
+  return (
+    <h1>Tickets</h1>
+  )
+}
+
 export default function SignIn() {
   return (
     <SignInPage
@@ -42,6 +50,14 @@ export default function SignIn() {
         forgotPasswordLink: ForgotPasswordLink,
         signUpLink: SignUpLink,
         subtitle: DemoInfo,
+        title: Title,
+        submitButton(props) {
+          return (
+            <Button variant="outlined" type="submit" fullWidth {...props}>
+              Sign in
+            </Button>
+          );
+        },
       }}
     />
   );

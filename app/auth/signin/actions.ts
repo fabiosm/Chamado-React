@@ -19,12 +19,13 @@ async function signIn(provider: AuthProvider, formData: FormData, callbackUrl?: 
     if (error instanceof Error && error.message === 'NEXT_REDIRECT') {
       throw error;
     }
+
     // Handle Auth.js errors
     if (error instanceof AuthError) {
       return {
         error:
           error.type === 'CredentialsSignin'
-            ? 'Invalid credentials.'
+            ? 'Credencial inválida, ou o serviço está indiponivel.'
             : 'An error with Auth.js occurred.',
         type: error.type,
       };

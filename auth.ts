@@ -1,32 +1,44 @@
-import NextAuth from 'next-auth';
-import GitHub from 'next-auth/providers/github';
-import Google from 'next-auth/providers/google';
+import NextAuth, { AuthError } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import type { Provider } from 'next-auth/providers';
 
 const providers: Provider[] = [
-  GitHub({
-    clientId: process.env.GITHUB_CLIENT_ID,
-    clientSecret: process.env.GITHUB_CLIENT_SECRET,
-  }),
-  Google({
-    clientId: process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  }),
   Credentials({
     credentials: {
       email: { label: 'Email Address', type: 'email' },
       password: { label: 'Password', type: 'password' },
     },
-    authorize(c) {
-      if (c.password === '@demo1' && c.email === 'toolpad-demo@mui.com') {
+    async authorize(c) {
+      try {
+        let urlLogin = 'http://127.0.0.1:8000/api/login'
+        const res = await fetch(urlLogin, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            email: c.email,
+            password: c.password
+          })
+        });
+
+        if (!res.ok) {
+          console.error('API fora do ar ou erro:', res.status);
+          return null;
+        }
+
+        const data = await res.json();
+        const user = data.user;
+
+        // Retorne os dados para armazenar na sessão
         return {
-          id: 'test',
-          name: 'Toolpad Demo',
-          email: String(c.email),
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          accessToken: data.token
         };
+      } catch (error) {
+        console.error('Erro na autenticação:', error);
+        return null;
       }
-      return null;
     },
   }),
 ];
