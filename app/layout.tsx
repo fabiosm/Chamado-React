@@ -1,8 +1,7 @@
 import * as React from 'react';
 import { NextAppProvider } from '@toolpad/core/nextjs';
-import PersonIcon from '@mui/icons-material/Person';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import ViewListIcon from '@mui/icons-material/ViewList';
+import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import type { Navigation } from '@toolpad/core/AppProvider';
 import { SessionProvider, signIn, signOut } from 'next-auth/react';
@@ -11,24 +10,22 @@ import { auth } from '../auth';
 
 const NAVIGATION: Navigation = [
   {
-    kind: 'header',
-    title: 'Main items',
+    title: 'Meus tickets',
+    icon: <ViewListIcon />,
   },
   {
-    title: 'Dashboard',
-    icon: <DashboardIcon />,
+    segment: 'novoTicket',
+    title: 'Abrir ticket',
+    icon: <ConfirmationNumberIcon />,
   },
-  {
-    segment: 'orders',
-    title: 'Orders',
-    icon: <ShoppingCartIcon />,
-  },
+  /*
   {
     segment: 'employees',
     title: 'Employees',
     icon: <PersonIcon />,
     pattern: 'employees{/:employeeId}*',
   },
+  */
 ];
 
 const AUTHENTICATION = {
