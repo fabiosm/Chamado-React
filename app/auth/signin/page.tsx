@@ -25,15 +25,6 @@ function SignUpLink() {
   );
 }
 
-function DemoInfo() {
-  return (
-    <Alert severity="info">
-      You can use <strong>toolpad-demo@mui.com</strong> with the password <strong>@demo1</strong> to
-      test
-    </Alert>
-  );
-}
-
 function Title()
 {
   return (
@@ -49,7 +40,6 @@ export default function SignIn() {
       slots={{
         forgotPasswordLink: ForgotPasswordLink,
         signUpLink: SignUpLink,
-        subtitle: DemoInfo,
         title: Title,
         submitButton(props) {
           return (

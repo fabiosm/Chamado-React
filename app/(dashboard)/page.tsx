@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Breadcrumb, PageContainer } from '@toolpad/core/PageContainer';
+import { PageContainer } from '@toolpad/core/PageContainer';
 import DashboardContent from './DashboardContent';
 
 import { customBreadcrumbs } from '../utils/breadcrumbs';
