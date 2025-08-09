@@ -22,17 +22,24 @@ const providers: Provider[] = [
 
         if (!res.ok) {
           console.error('API fora do ar ou erro:', res.status);
-          return null;
+          throw new Error('API fora do ar ou erro ao autenticar.');
         }
 
         const data = await res.json();
         const user = data.user;
+
+        // Verifica se o usuário está ativo e não está pendente
+        if (!user || user.is_active == false || user.is_pending == true) {
+          console.error('Usuário não encontrado:', data);
+          throw new Error('Usuário não encontrado ou inativo.');
+        }
 
         // Retorne os dados para armazenar na sessão
         return {
           id: user.id,
           name: user.name,
           email: user.email,
+          isAdmin: user.is_admin,
           accessToken: data.token
         };
       } catch (error) {
@@ -58,6 +65,27 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     signIn: '/auth/signin',
   },
   callbacks: {
+    async jwt({ token, user }) {
+      // Isso roda apenas no login
+      if (user) {
+        token.id = user.id;
+        token.name = user.name;
+        token.email = user.email;
+        token.isAdmin = user.isAdmin;
+        token.accessToken = user.accessToken;
+      }
+      return token;
+    },
+
+    async session({ session, token }) {
+      if (session.user) {
+        session.user.id = token.id;
+        session.user.isAdmin = token.isAdmin;
+        session.user.accessToken = token.accessToken;
+      }
+      return session;
+    },
+
     authorized({ auth: session, request: { nextUrl } }) {
       const isLoggedIn = !!session?.user;
       const isPublicPage = nextUrl.pathname.startsWith('/public');

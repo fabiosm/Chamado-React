@@ -3,7 +3,7 @@ import { customBreadcrumbs } from '@/app/utils/breadcrumbs';
 import { PageContainer } from '@toolpad/core';
 import React, { useState, FormEvent } from 'react';
 
-export default function OrdersPage() {
+export default function NovoTicketPage() {
   return (
     <PageContainer breadcrumbs={customBreadcrumbs()}>
       <form>
