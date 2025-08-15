@@ -15,7 +15,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   const session = await auth();
   return (
     <html lang="en" data-toolpad-color-scheme="light">
-      <body>
+      <body cz-shortcut-listen="true">
         <SessionProvider session={session}>
           <AppRouterCacheProvider options={{ enableCssLayer: true }}>
             <NextAppProvider

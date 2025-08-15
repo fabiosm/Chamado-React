@@ -9,6 +9,7 @@ export function getNavigation(session: Session | null): Navigation {
 
     let navigation: Navigation = [
         {
+            segment: '/',
             title: 'Meus tickets',
             icon: <ViewListIcon />,
         },

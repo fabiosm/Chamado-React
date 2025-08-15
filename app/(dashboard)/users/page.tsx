@@ -7,7 +7,17 @@ import { Box, Button, Checkbox, Modal, TextField } from '@mui/material';
 import ModalEditarUsuario from '@/app/components/ModalEditarUsuario';
 import { User } from '@/types/Interfaces';
 
-async function salvarUser(user: User, session: any) {
+function validarSenha(senha: string) {
+  const erros: string[] = [];
+  if (senha.length < 6) erros.push("A senha deve ter pelo menos 6 caracteres.");
+  //if (!/[A-Z]/.test(senha)) erros.push("A senha deve conter pelo menos uma letra maiúscula.");
+  //if (!/[a-z]/.test(senha)) erros.push("A senha deve conter pelo menos uma letra minúscula.");
+  if (!/[0-9]/.test(senha)) erros.push("A senha deve conter pelo menos um número.");
+  //if (!/[!@#$%^&*(),.?":{}|<>]/.test(senha)) erros.push("A senha deve conter pelo menos um caractere especial.");
+  return erros;
+}
+
+async function editarUser(user: User, session: any) {
   try {
     const response = await fetch(
       process.env.NEXT_PUBLIC_APP_API_URL + '/admin/users/' + user.id,
@@ -44,6 +54,12 @@ export default function UsersPage() {
   const handleAbrirModal = (user: User) => {
     setUserEditando(user);
   };
+
+  const handleAtivaDesativaUser = (user: User) => {
+    user.is_active = !user.is_active; // Inverte o estado de ativo/inativo
+    editarUser(user, session);
+    carregarUsuarios();
+  }
 
   const carregarUsuarios = React.useCallback(async () => {
     setLoading(true);
@@ -108,16 +124,24 @@ export default function UsersPage() {
       renderCell: (param: any) => (
         <>
           <Box display="flex" gap={2}>
+            {param.row.is_active === 1 && (
+              <Button
+                variant="contained"
+                color="success"
+                size="small"
+                onClick={() => handleAbrirModal(param.row)}
+              >
+                Editar
+              </Button>
+            )}
+
             <Button
               variant="contained"
-              color="success"
+              color={ param.row.is_active ? 'error' : 'warning' }
               size="small"
-              onClick={() => handleAbrirModal(param.row)}
+              onClick={() => handleAtivaDesativaUser(param.row)}
             >
-              Editar
-            </Button>
-            <Button variant="contained" color="error" size="small">
-              Desativar
+              { param.row.is_active ? 'Desativar' : 'Ativar' }
             </Button>
           </Box>
         </>
@@ -135,7 +159,20 @@ export default function UsersPage() {
         user={userEditando}
         onClose={() => setUserEditando(null)}
         onSave={(userAtualizado) => {
-          salvarUser(userAtualizado, session);
+          if (userAtualizado?.password !== userAtualizado?.password_confirmation) {
+            alert("As senhas não conferem.");
+            return;
+          }
+
+          if (userAtualizado.password) {
+            const erros = validarSenha(userAtualizado.password);
+            if (erros.length > 0) {
+              alert("Erros na senha:\n" + erros.join("\n"));
+              return;
+            }
+          }
+
+          editarUser(userAtualizado, session);
           carregarUsuarios();
           setUserEditando(null);
         }}

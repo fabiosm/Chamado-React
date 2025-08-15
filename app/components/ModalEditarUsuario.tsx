@@ -7,7 +7,7 @@ export default function ModalEditarUsuario({ user, onClose, onSave }: {
   onClose: () => void,
   onSave: (user: User) => void
 }) {
-    const [localUser, setLocalUser] = React.useState<User | null>(user);
+    const [localUser, setLocalUser] = React.useState<User & { password?: string; password_confirmation?: string } | null>(user);
     const [campoSenha, setCampoSenha] = React.useState(false);
 
     const modalStyle = {
@@ -63,8 +63,28 @@ export default function ModalEditarUsuario({ user, onClose, onSave }: {
             {campoSenha && (
                 <>
                     <hr />
-                    <TextField label="Senha" fullWidth margin="normal" type="password" />
-                    <TextField label="Confirmar Senha" fullWidth margin="normal" type="password" />
+                    <TextField
+                        label="Senha"
+                        fullWidth
+                        margin="normal"
+                        type="password"
+                        name="senha"
+                        value={localUser.password || ""}
+                        onChange={(e) =>
+                            setLocalUser({ ...localUser, password: e.target.value })
+                        }
+                    />
+                    <TextField
+                        label="Confirmar Senha"
+                        fullWidth
+                        margin="normal"
+                        type="password"
+                        name="password_confirmation"
+                        value={localUser.password_confirmation || ""}
+                        onChange={(e) =>
+                            setLocalUser({ ...localUser, password_confirmation: e.target.value })
+                        }
+                    />
                 </>
             )}
 
