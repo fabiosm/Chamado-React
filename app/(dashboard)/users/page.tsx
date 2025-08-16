@@ -3,176 +3,119 @@ import * as React from 'react';
 import { PageContainer } from '@toolpad/core/PageContainer';
 import CustomDataGrid from '../../components/CustomDataGrid';
 import { useSession } from 'next-auth/react';
-import { Box, Button, Checkbox, Modal, TextField } from '@mui/material';
+import { Box, Button } from '@mui/material';
 import ModalEditarUsuario from '@/app/components/ModalEditarUsuario';
 import { User } from '@/types/Interfaces';
+import { editarUser, fetchUsuarios } from '@/app/api/users';
 
+// Função de validação
 function validarSenha(senha: string) {
   const erros: string[] = [];
   if (senha.length < 6) erros.push("A senha deve ter pelo menos 6 caracteres.");
-  //if (!/[A-Z]/.test(senha)) erros.push("A senha deve conter pelo menos uma letra maiúscula.");
-  //if (!/[a-z]/.test(senha)) erros.push("A senha deve conter pelo menos uma letra minúscula.");
   if (!/[0-9]/.test(senha)) erros.push("A senha deve conter pelo menos um número.");
-  //if (!/[!@#$%^&*(),.?":{}|<>]/.test(senha)) erros.push("A senha deve conter pelo menos um caractere especial.");
   return erros;
 }
 
-async function editarUser(user: User, session: any) {
-  try {
-    const response = await fetch(
-      process.env.NEXT_PUBLIC_APP_API_URL + '/admin/users/' + user.id,
-      {
-        method: 'PUT', // ou 'PATCH' se for atualização parcial
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.user?.accessToken}`,
-        },
-        body: JSON.stringify(user), // ou apenas os dados a serem atualizados
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Erro da API: ${response.status}`);
-    }
-
-    const data = await response.json();
-    console.log('Usuário atualizado:', data);
-  } catch (error) {
-    console.error('Erro ao editar usuário', error);
-    window.alert('Sua sessão expirou ou você não tem permissão.');
-    window.location.href = '/';
-  }
-}
-
 export default function UsersPage() {
-  const [rows, setRows] = React.useState([]);
+  const [rows, setRows] = React.useState<User[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [userEditando, setUserEditando] = React.useState<User | null>(null);
   const { data: session } = useSession();
 
-  const handleAbrirModal = (user: User) => {
-    setUserEditando(user);
-  };
-
-  const handleAtivaDesativaUser = (user: User) => {
-    user.is_active = !user.is_active; // Inverte o estado de ativo/inativo
-    editarUser(user, session);
-    carregarUsuarios();
-  }
-
   const carregarUsuarios = React.useCallback(async () => {
+    if (!session) return;
     setLoading(true);
-    fetch(
-      process.env.NEXT_PUBLIC_APP_API_URL  + '/admin/users',
-      {
-        headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session?.user?.accessToken}`,
-          }
-        }
-      )
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`Erro da API: ${response.status}`);
-        }
-        return response.json();
-      })
-      .then((data) => {
-        setRows(data.data);
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error('Erro ao buscar usuários:', error);
-        // Alerta
-        window.alert('Sua sessão expirou ou você não tem permissão.');
-        // Redirecionamento para a página de login
-        window.location.href = '/';
-        setLoading(false);
-      });
-
+    try {
+      const data = await fetchUsuarios(session.user.accessToken);
+      setRows(data);
+    } catch (error) {
+      console.error('Erro ao buscar usuários:', error);
+      window.alert('Sua sessão expirou ou você não tem permissão.');
+      window.location.href = '/';
+    } finally {
+      setLoading(false);
+    }
   }, [session]);
 
   React.useEffect(() => {
-    if (session) {
-      carregarUsuarios();
-    }
+    carregarUsuarios();
+  }, [carregarUsuarios]);
+
+  const handleAbrirModal = React.useCallback((user: User) => {
+    setUserEditando(user);
+  }, []);
+
+  const handleAtivaDesativaUser = React.useCallback(async (user: User) => {
+    const atualizado = { ...user, is_active: !user.is_active };
+    await editarUser(atualizado, session?.user?.accessToken);
+    carregarUsuarios();
   }, [session, carregarUsuarios]);
 
-  const columns = [
+  const columns = React.useMemo(() => [
     { field: 'name', headerName: 'Usuário', width: 200 },
     { field: 'email', headerName: 'E-mail', width: 200 },
     {
       field: 'created_at',
       headerName: 'Criado em',
       width: 250,
-      valueFormatter: (params: string | number | Date) => new Date(params).toLocaleDateString('pt-BR'),
+      valueFormatter: (params: any) => new Date(params.value).toLocaleDateString('pt-BR'),
     },
     {
       field: 'is_admin',
       headerName: 'Admin',
       width: 150,
-      renderCell: (param: any) => (
-        <input type="checkbox" checked={param.value} readOnly disabled />
-      ),
+      renderCell: (params: any) => <input type="checkbox" checked={params.value} readOnly disabled />,
     },
     {
       field: 'id',
       headerName: 'Ações',
       width: 250,
-      renderCell: (param: any) => (
-        <>
-          <Box display="flex" gap={2}>
-            {param.row.is_active === 1 && (
-              <Button
-                variant="contained"
-                color="success"
-                size="small"
-                onClick={() => handleAbrirModal(param.row)}
-              >
-                Editar
-              </Button>
-            )}
-
+      renderCell: (params: any) => (
+        <Box display="flex" gap={2}>
+          {params.row.is_active === 1 && (
             <Button
               variant="contained"
-              color={ param.row.is_active ? 'error' : 'warning' }
+              color="success"
               size="small"
-              onClick={() => handleAtivaDesativaUser(param.row)}
+              onClick={() => handleAbrirModal(params.row)}
             >
-              { param.row.is_active ? 'Desativar' : 'Ativar' }
+              Editar
             </Button>
-          </Box>
-        </>
+          )}
+          <Button
+            variant="contained"
+            color={params.row.is_active ? 'error' : 'warning'}
+            size="small"
+            onClick={() => handleAtivaDesativaUser(params.row)}
+          >
+            {params.row.is_active ? 'Desativar' : 'Ativar'}
+          </Button>
+        </Box>
       ),
       sortable: false,
       filterable: false,
     },
-  ];
+  ], [handleAbrirModal, handleAtivaDesativaUser]);
 
   return (
-    <PageContainer>
+    <PageContainer style={{ display: 'flex', flexDirection: 'column' }}>
       <CustomDataGrid rows={rows} columns={columns} loading={loading} />
-
       <ModalEditarUsuario
         user={userEditando}
         onClose={() => setUserEditando(null)}
-        onSave={(userAtualizado) => {
+        onSave={async (userAtualizado) => {
           if (userAtualizado?.password !== userAtualizado?.password_confirmation) {
             alert("As senhas não conferem.");
             return;
           }
-
           if (userAtualizado.password) {
             const erros = validarSenha(userAtualizado.password);
-            if (erros.length > 0) {
+            if (erros.length) {
               alert("Erros na senha:\n" + erros.join("\n"));
               return;
             }
           }
-
-          editarUser(userAtualizado, session);
+          await editarUser(userAtualizado, session?.user?.accessToken);
           carregarUsuarios();
           setUserEditando(null);
         }}
