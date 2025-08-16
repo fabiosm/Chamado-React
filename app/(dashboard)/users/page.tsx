@@ -8,7 +8,7 @@ import ModalEditarUsuario from '@/app/components/ModalEditarUsuario';
 import { User } from '@/types/Interfaces';
 import { editarUser, fetchUsuarios } from '@/app/api/users';
 
-// Função de validação
+// Função de validação de senha
 function validarSenha(senha: string) {
   const erros: string[] = [];
   if (senha.length < 6) erros.push("A senha deve ter pelo menos 6 caracteres.");
@@ -20,8 +20,9 @@ export default function UsersPage() {
   const [rows, setRows] = React.useState<User[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [userEditando, setUserEditando] = React.useState<User | null>(null);
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
 
+  // Função para carregar usuários
   const carregarUsuarios = React.useCallback(async () => {
     if (!session) return;
     setLoading(true);
@@ -37,9 +38,22 @@ export default function UsersPage() {
     }
   }, [session]);
 
+  // useEffect assíncrono moderno
   React.useEffect(() => {
-    carregarUsuarios();
-  }, [carregarUsuarios]);
+    if (status !== 'authenticated') return;
+
+    let isMounted = true;
+
+    (async () => {
+      await carregarUsuarios();
+      // verifica se ainda está montado antes de atualizar estado
+      if (!isMounted) return;
+    })();
+
+    return () => {
+      isMounted = false; // impede updates se desmontado
+    };
+  }, [status, carregarUsuarios]);
 
   const handleAbrirModal = React.useCallback((user: User) => {
     setUserEditando(user);
@@ -48,7 +62,7 @@ export default function UsersPage() {
   const handleAtivaDesativaUser = React.useCallback(async (user: User) => {
     const atualizado = { ...user, is_active: !user.is_active };
     await editarUser(atualizado, session?.user?.accessToken);
-    carregarUsuarios();
+    await carregarUsuarios();
   }, [session, carregarUsuarios]);
 
   const columns = React.useMemo(() => [
@@ -64,42 +78,50 @@ export default function UsersPage() {
       field: 'is_admin',
       headerName: 'Admin',
       width: 150,
-      renderCell: (params: any) => <input type="checkbox" checked={params.value} readOnly disabled />,
+      renderCell: (params: any) => <input type="checkbox" checked={!!params.value} readOnly disabled />,
     },
     {
       field: 'id',
       headerName: 'Ações',
       width: 250,
-      renderCell: (params: any) => (
-        <Box display="flex" gap={2}>
-          {params.row.is_active === 1 && (
+      renderCell: (params: any) => {
+        const ativo = !!params.row.is_active;
+        return (
+          <Box display="flex" gap={2}>
+            {ativo && (
+              <Button
+                variant="contained"
+                color="success"
+                size="small"
+                onClick={() => handleAbrirModal(params.row)}
+              >
+                Editar
+              </Button>
+            )}
             <Button
               variant="contained"
-              color="success"
+              color={ativo ? 'error' : 'warning'}
               size="small"
-              onClick={() => handleAbrirModal(params.row)}
+              onClick={() => handleAtivaDesativaUser(params.row)}
             >
-              Editar
+              {ativo ? 'Desativar' : 'Ativar'}
             </Button>
-          )}
-          <Button
-            variant="contained"
-            color={params.row.is_active ? 'error' : 'warning'}
-            size="small"
-            onClick={() => handleAtivaDesativaUser(params.row)}
-          >
-            {params.row.is_active ? 'Desativar' : 'Ativar'}
-          </Button>
-        </Box>
-      ),
+          </Box>
+        );
+      },
       sortable: false,
       filterable: false,
     },
   ], [handleAbrirModal, handleAtivaDesativaUser]);
 
   return (
-    <PageContainer style={{ display: 'flex', flexDirection: 'column' }}>
-      <CustomDataGrid rows={rows} columns={columns} loading={loading} />
+    <PageContainer style={{ display: 'flex', flexDirection: 'column', minHeight: '500px' }}>
+      <CustomDataGrid
+        rows={rows}
+        columns={columns}
+        loading={loading}
+        style={{ flex: 1, minHeight: '400px' }}
+      />
       <ModalEditarUsuario
         user={userEditando}
         onClose={() => setUserEditando(null)}
@@ -116,7 +138,7 @@ export default function UsersPage() {
             }
           }
           await editarUser(userAtualizado, session?.user?.accessToken);
-          carregarUsuarios();
+          await carregarUsuarios();
           setUserEditando(null);
         }}
       />

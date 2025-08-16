@@ -2,8 +2,23 @@ import * as React from 'react';
 import { DataGrid, DataGridProps } from '@mui/x-data-grid';
 
 export default function CustomDataGrid(props: DataGridProps) {
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return null; // só renderiza o DataGrid após o mount
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column' }}>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '500px', // altura fixa para evitar erro
+        width: '100%',
+      }}
+    >
       <DataGrid
         {...props}
         getRowClassName={(params) => (params.indexRelativeToCurrentPage % 2 === 0 ? 'even' : 'odd')}
