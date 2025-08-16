@@ -5,6 +5,7 @@ import { SessionProvider, signIn, signOut } from 'next-auth/react';
 import theme from '../theme';
 import { auth } from '../auth';
 import { getNavigation } from './utils/navigation';
+import { Toaster } from 'react-hot-toast';
 
 const AUTHENTICATION = {
   signIn,
@@ -25,6 +26,10 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
               authentication={AUTHENTICATION}
             >
               {children}
+              <Toaster
+                position="bottom-right"
+                toastOptions={{ duration: 5000 }}
+              />
             </NextAppProvider>
           </AppRouterCacheProvider>
         </SessionProvider>

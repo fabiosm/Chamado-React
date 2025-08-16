@@ -7,6 +7,7 @@ import { Box, Button } from '@mui/material';
 import ModalEditarUsuario from '@/app/components/ModalEditarUsuario';
 import { User } from '@/types/Interfaces';
 import { editarUser, fetchUsuarios } from '@/app/api/users';
+import toast from 'react-hot-toast';
 
 // Função de validação de senha
 function validarSenha(senha: string) {
@@ -60,8 +61,14 @@ export default function UsersPage() {
   }, []);
 
   const handleAtivaDesativaUser = React.useCallback(async (user: User) => {
+    let msg = 'Usuário ativado.';
+    if (user.is_active) {
+      msg = 'Usuário desativado.'
+    }
+
     const atualizado = { ...user, is_active: !user.is_active };
     await editarUser(atualizado, session?.user?.accessToken);
+    toast.success(msg);
     await carregarUsuarios();
   }, [session, carregarUsuarios]);
 
@@ -72,7 +79,9 @@ export default function UsersPage() {
       field: 'created_at',
       headerName: 'Criado em',
       width: 250,
-      valueFormatter: (params: any) => new Date(params.value).toLocaleDateString('pt-BR'),
+      valueFormatter: (params: any) => {
+        return new Date(params).toLocaleDateString('pt-BR');
+      },
     },
     {
       field: 'is_admin',
@@ -138,6 +147,7 @@ export default function UsersPage() {
             }
           }
           await editarUser(userAtualizado, session?.user?.accessToken);
+          toast.success('Usuário atualizado com sucesso.');
           await carregarUsuarios();
           setUserEditando(null);
         }}

@@ -15,7 +15,6 @@ export default function CustomDataGrid(props: DataGridProps) {
       style={{
         display: 'flex',
         flexDirection: 'column',
-        height: '500px', // altura fixa para evitar erro
         width: '100%',
       }}
     >
